@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Terraform local files
 .terraform/
 *.tfstate
@@ -5,3 +6,9 @@
 .terraform.lock.hcl
 # provider binaries
 jenkins_terraform/.terraform/
+=======
+.terraform/
+*.tfstate
+terraform.tfstate*
+.terraform.lock.hcl
+>>>>>>> 8a32b7d9eaeade983dc6099c289f6b2e444fc246
