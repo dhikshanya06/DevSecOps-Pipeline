@@ -26,7 +26,7 @@ pipeline {
     stage('Scan Image (Trivy)') {
       steps {
         script {
-          // run trivy and report findings but do not fail the build
+          // run trivy but do not fail pipeline for now, only report findings
           sh '''
             echo "Scanning image ${IMAGE_NAME} for HIGH/CRITICAL vulnerabilities..."
             trivy image --severity HIGH,CRITICAL ${IMAGE_NAME} || true
@@ -37,8 +37,7 @@ pipeline {
 
     stage('Login to Docker Hub') {
       steps {
-        // This must match the credentials id you create in Jenkins (see step 2)
-        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
           sh '''
             echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
           '''
@@ -60,9 +59,7 @@ pipeline {
     stage('Cleanup') {
       steps {
         script {
-          sh """
-            docker rmi ${IMAGE_NAME} || true
-          """
+          sh "docker rmi ${IMAGE_NAME} || true"
         }
       }
     }
