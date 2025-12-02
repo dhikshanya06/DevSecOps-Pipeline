@@ -1,3 +1,9 @@
+# paste the Jenkinsfile content from step 1, save and exit
+
+# commit and push
+git add Jenkinsfile
+git commit -m "Add Deploy to EC2 stage (deploy via ssh credential ec2-deployer)"
+git push origin main
 pipeline {
   agent any
 
