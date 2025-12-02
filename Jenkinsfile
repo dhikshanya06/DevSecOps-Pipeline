@@ -15,10 +15,10 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          sh """
+          sh '''
             echo "Building ${IMAGE_NAME}"
             docker build -t ${IMAGE_NAME} .
-          """
+          '''
         }
       }
     }
@@ -37,7 +37,7 @@ pipeline {
 
     stage('Login to Docker Hub') {
       steps {
-        // use the Jenkins credential with id 'dockerhub' (you have this in Jenkins)
+        // uses Jenkins credential with id 'dockerhub' (you already added this in Jenkins)
         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
           sh '''
             echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
@@ -49,10 +49,10 @@ pipeline {
     stage('Push Image to Docker Hub') {
       steps {
         script {
-          sh """
+          sh '''
             echo "Pushing ${IMAGE_NAME} to Docker Hub"
             docker push ${IMAGE_NAME}
-          """
+          '''
         }
       }
     }
@@ -60,9 +60,9 @@ pipeline {
     stage('Cleanup') {
       steps {
         script {
-          sh """
+          sh '''
             docker rmi ${IMAGE_NAME} || true
-          """
+          '''
         }
       }
     }
