@@ -1,6 +1,5 @@
 FROM nginx:1.25
 
-WORKDIR /usr/share/nginx/html
+RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY index.html .
-COPY cspm/ cspm/
+COPY . /usr/share/nginx/html
