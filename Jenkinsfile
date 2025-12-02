@@ -1,9 +1,3 @@
-# paste the Jenkinsfile content from step 1, save and exit
-
-# commit and push
-git add Jenkinsfile
-git commit -m "Add Deploy to EC2 stage (deploy via ssh credential ec2-deployer)"
-git push origin main
 pipeline {
   agent any
 
@@ -63,7 +57,6 @@ pipeline {
     stage('Deploy to EC2') {
       steps {
         script {
-          // try sshagent first. if plugin missing, fallback will be used in second block
           try {
             sshagent (credentials: [env.SSH_CRED_ID]) {
               sh """
@@ -78,11 +71,9 @@ pipeline {
               """
             }
           } catch (err) {
-            // fallback: use ssh key stored in credentials as temporary file
             withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CRED_ID, keyFileVariable: 'KEYFILE', usernameVariable: 'SSHUSER')]) {
               sh '''
                 chmod 600 "$KEYFILE"
-                echo "Fallback deploy using key file $KEYFILE"
                 ssh -o StrictHostKeyChecking=no -i "$KEYFILE" ${SSHUSER}@${TARGET_HOST} 'set -e
                   docker pull '${IMAGE_NAME}' || sudo docker pull '${IMAGE_NAME}'
                   docker stop devsecops-app || true
