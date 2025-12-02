@@ -38,7 +38,7 @@ pipeline {
     stage('Login to Docker Hub') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
-          sh '''echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin'''
+          sh 'echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin'
         }
       }
     }
@@ -57,31 +57,18 @@ pipeline {
     stage('Deploy to EC2') {
       steps {
         script {
-          try {
-            sshagent (credentials: [env.SSH_CRED_ID]) {
-              sh """
-                echo "Deploying ${IMAGE_NAME} to ${TARGET_HOST}"
-                ssh -o StrictHostKeyChecking=no ${TARGET_USER}@${TARGET_HOST} \\
-                  'set -e
-                   docker pull ${IMAGE_NAME} || sudo docker pull ${IMAGE_NAME}
-                   docker stop devsecops-app || true
-                   docker rm devsecops-app || true
-                   docker run -d --name devsecops-app -p 80:80 ${IMAGE_NAME} || sudo docker run -d --name devsecops-app -p 80:80 ${IMAGE_NAME}
-                  '
-              """
-            }
-          } catch (err) {
-            withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CRED_ID, keyFileVariable: 'KEYFILE', usernameVariable: 'SSHUSER')]) {
-              sh '''
-                chmod 600 "$KEYFILE"
-                ssh -o StrictHostKeyChecking=no -i "$KEYFILE" ${SSHUSER}@${TARGET_HOST} 'set -e
-                  docker pull '${IMAGE_NAME}' || sudo docker pull '${IMAGE_NAME}'
-                  docker stop devsecops-app || true
-                  docker rm devsecops-app || true
-                  docker run -d --name devsecops-app -p 80:80 '${IMAGE_NAME}' || sudo docker run -d --name devsecops-app -p 80:80 '${IMAGE_NAME}'
-                '
-              '''
-            }
+          // use sshUserPrivateKey credential and run remote commands with ssh -i
+          withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CRED_ID, keyFileVariable: 'KEYFILE', usernameVariable: 'SSHUSER')]) {
+            sh '''
+              chmod 600 "$KEYFILE"
+              echo "Deploying ${IMAGE_NAME} to ${TARGET_HOST} as ${SSHUSER}"
+              ssh -o StrictHostKeyChecking=no -i "$KEYFILE" ${SSHUSER}@${TARGET_HOST} 'set -e
+                docker pull '${IMAGE_NAME}' || sudo docker pull '${IMAGE_NAME}'
+                docker stop devsecops-app || true
+                docker rm devsecops-app || true
+                docker run -d --name devsecops-app -p 80:80 '${IMAGE_NAME}' || sudo docker run -d --name devsecops-app -p 80:80 '${IMAGE_NAME}'
+              '
+            '''
           }
         }
       }
@@ -96,7 +83,7 @@ pipeline {
 
   post {
     always { echo "Pipeline finished. Build: ${BUILD_NUMBER}" }
-    success { echo "Success: image ${IMAGE_NAME} built and pushed and deployed" }
+    success { echo "Success: image ${IMAGE_NAME} built, pushed, and deployed" }
     failure { echo "Failure: check Jenkins console and Trivy report" }
   }
 }
